@@ -56,7 +56,7 @@ async function pushWithRetry(cwd: string, url: string, attempts = 6): Promise<vo
 
 /**
  * Create a CNB repo and seed it with just enough config for the cloud agent to
- * run: .cnb.yml, .cnb/agent/{run.sh,notify.sh}, .pi/cnb-cloud.json.
+ * run: .cnb.yml, .cnb/agent/run.sh, .pi/cnb-cloud.json.
  * There is no "create commit" API, so the seed is pushed over git.
  */
 export async function provisionRepo(options: ProvisionOptions): Promise<ProvisionResult> {
@@ -75,7 +75,6 @@ export async function provisionRepo(options: ProvisionOptions): Promise<Provisio
   const files = [
     ".cnb.yml",
     ".cnb/agent/run.sh",
-    ".cnb/agent/notify.sh",
     ".pi/cnb-cloud.json",
     ".gitignore",
   ];
@@ -95,8 +94,6 @@ export async function provisionRepo(options: ProvisionOptions): Promise<Provisio
     );
     writeFileSync(join(dir, ".cnb/agent/run.sh"), readTemplate("agent/run.sh"), "utf8");
     chmodSync(join(dir, ".cnb/agent/run.sh"), 0o755);
-    writeFileSync(join(dir, ".cnb/agent/notify.sh"), readTemplate("agent/notify.sh"), "utf8");
-    chmodSync(join(dir, ".cnb/agent/notify.sh"), 0o755);
     writeFileSync(
       join(dir, ".pi/cnb-cloud.json"),
       `${JSON.stringify(

@@ -1,6 +1,6 @@
 # pi-cnb-cloud
 
-把 pi 变成「合盖即走」的云端编码 agent：本地一句话派发，任务在腾讯云原生构建（CNB）里无人值守执行，跑完推分支、开 PR，并用 IM 通知你。
+把 pi 变成「合盖即走」的云端编码 agent：本地一句话派发，任务在腾讯云原生构建（CNB）里无人值守执行，跑完推分支、开 PR，回来用 `/cloud-status` 查看。
 
 本地 pi 只负责「发起 + 查看」，真正的读代码、改代码、跑测试、提交，全在 CNB 的临时容器里完成。
 
@@ -11,7 +11,7 @@
 │ /cloud-new <仓库>│ ───────────────► │ 2. .cnb/agent/run.sh 无头运行 pi       │
 │   一句话建仓库    │                  │ 3. 测试失败 → 带日志再跑一轮（自愈）    │
 │   立刻返回       │                  │ 4. commit → push agent/<id> → 开 PR    │
-└─────────────────┘                  │ 5. IM webhook 通知                     │
+└─────────────────┘                  └──────────────────────────────────────┘
         （合盖）                      └──────────────────────────────────────┘
 ```
 
@@ -78,7 +78,6 @@ AGENT_API_KEY: "sk-..."
 AGENT_BASE_URL: "https://api.deepseek.com/v1"
 AGENT_MODEL: "deepseek-flash"
 AGENT_API: "openai-completions"        # 或 anthropic-messages
-AGENT_NOTIFY_WEBHOOK: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=..."  # 可选
 
 allow_slugs:
   - "your-org/**"
@@ -121,7 +120,7 @@ pi
 插件会：
 
 1. `POST /{group}/-/repos` 建私有仓库
-2. 推 4 个文件（`.cnb.yml`、`.cnb/agent/run.sh`、`.cnb/agent/notify.sh`、`.pi/cnb-cloud.json`）
+2. 推 3 个文件（`.cnb.yml`、`.cnb/agent/run.sh`、`.pi/cnb-cloud.json`）
 3. 派发任务，云端 agent 从空仓库生成项目、跑测试、开 PR
 
 常用参数：
@@ -200,7 +199,6 @@ LLM 也能直接调用 `cnb_cloud` 工具（`action=dispatch|status|logs|list|ca
 | `maxIterations` | `2` | agent 最多跑几轮 |
 | `pollIntervalMs` | `20000` | 本地轮询间隔 |
 | `autoWatch` | `true` | 启动时继续跟踪未完成任务 |
-| `notifyWebhookEnv` | — | IM webhook 的环境变量名 |
 
 环境变量覆盖：`CNB_TOKEN`、`CNB_API_ENDPOINT`、`CNB_CLOUD_EVENT`、`CNB_CLOUD_REPO`、`CNB_CLOUD_BRANCH`、`CNB_CLOUD_TEST_CMD`、`CNB_CLOUD_IMAGE`、`CNB_CLOUD_GROUP`。
 
@@ -215,7 +213,6 @@ LLM 也能直接调用 `cnb_cloud` 工具（`action=dispatch|status|logs|list|ca
 | `AGENT_TEST_CMD` | 测试命令；缺省读 `.pi/cnb-cloud.json` |
 | `AGENT_MAX_ITERATIONS` | 最多几轮 |
 | `AGENT_MODEL` / `AGENT_PROVIDER` / `AGENT_BASE_URL` / `AGENT_API` / `AGENT_API_KEY` | 模型配置；有 `baseUrl` 时自动写 `~/.pi/agent/models.json`，key 用 `$AGENT_API_KEY` 引用，不落盘 |
-| `AGENT_NOTIFY_WEBHOOK` | IM webhook（企微 / 飞书 / 钉钉 / Slack 自动适配） |
 
 流程：
 
@@ -225,7 +222,7 @@ for i in 1..N:
     pi --mode json --no-session <prompt> > events.jsonl &
     heartbeat 每 30s 打点        # 防止 CNB 10 分钟无输出杀 stage
     跑 AGENT_TEST_CMD；失败 → 日志进下一轮 prompt
-commit → push agent/<run-id> → POST /pulls → 通知
+commit → push agent/<run-id> → POST /pulls
 println ===PI-CNB-RESULT=== {json}
 ```
 
@@ -249,8 +246,7 @@ src/
 └── args.ts        命令参数解析
 
 templates/agent/
-├── run.sh         云端主循环（心跳、自愈、推送、PR、通知）
-├── notify.sh      企微/飞书/钉钉/Slack webhook
+├── run.sh         云端主循环（心跳、自愈、推送、PR）
 └── Dockerfile     胖镜像（node + pi，按需替换为 JDK/Maven 等）
 ```
 
@@ -279,7 +275,7 @@ node --experimental-transform-types test/rpc-smoke.test.ts # 真实 pi 子进程
 ./node_modules/.bin/tsc --noEmit
 ```
 
-`run-sh.test.sh` 覆盖：自愈循环、无变更、缺令牌、推送、建 PR、通知、结果标记。
+`run-sh.test.sh` 覆盖：自愈循环、无变更、缺令牌、推送、建 PR、结果标记。
 `rpc-smoke.test.ts` 覆盖：`/cloud`、`/cloud-status`、`/cloud-setup`、`/cloud-config`、任务持久化。
 
 ## 实测数据
@@ -301,7 +297,7 @@ node --experimental-transform-types test/rpc-smoke.test.ts # 真实 pi 子进程
 | `任务超过(10m0s)没有任何输出而被强制关闭` | 老版本 run.sh 无心跳；升级到带 heartbeat 的版本 |
 | 分支推不上去 | 流水线开了 `sandbox: true`（会让 `CNB_TOKEN` 失效） |
 | PR 没建但分支在 | 令牌缺 `repo-pr:rw`，或仓库关闭了 PR；分支本身可用 |
-| 本地 watcher 不更新 | 合盖后进程已退出；用 `/cloud-status` 回读，或加 IM 通知 |
+| 本地 watcher 不更新 | 合盖后进程已退出；用 `/cloud-status` 回读 |
 | agent 只输出文本不改文件 | 模型偶发行为；prompt 里加「必须用 write/bash 真实改文件」，或重跑 |
 
 ## 安全

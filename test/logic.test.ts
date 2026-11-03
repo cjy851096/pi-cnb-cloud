@@ -70,7 +70,6 @@ test("writeScaffold writes files and refuses to clobber user files", () => {
   const first = writeScaffold(dir, { event: "api_trigger_agent", testCommand: "npm test" });
   assert.ok(first.written.includes(".cnb.yml"));
   assert.ok(existsSync(join(dir, ".cnb/agent/run.sh")));
-  assert.ok(existsSync(join(dir, ".cnb/agent/notify.sh")));
   assert.ok(existsSync(join(dir, ".cnb/agent/Dockerfile")));
   assert.ok(existsSync(join(dir, ".pi/cnb-cloud.json")));
 

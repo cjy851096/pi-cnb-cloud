@@ -24,7 +24,7 @@ export function buildCnbYml(options: CnbYmlOptions): string {
     "      # 任务参数由本地插件通过 OpenAPI 注入（AGENT_TASK / AGENT_TITLE / AGENT_RUN_ID）。",
     "      # 模型与通知密钥不要写在这里，放 CNB 密钥仓库并用 imports 引入：",
     "      # imports: https://cnb.cool/<org>/<secret-repo>/-/blob/main/agent.yml",
-    "      #   agent.yml: AGENT_API_KEY / AGENT_BASE_URL / AGENT_MODEL / AGENT_NOTIFY_WEBHOOK",
+    "      #   agent.yml: AGENT_API_KEY / AGENT_BASE_URL / AGENT_MODEL",
   ].join("\n");
 
   const dockerBlock = image
@@ -105,7 +105,6 @@ export function writeScaffold(cwd: string, options: ScaffoldOptions): ScaffoldRe
     force,
     executable: true,
   }, result);
-  writeFile(cwd, ".cnb/agent/notify.sh", readTemplate("agent/notify.sh"), { force, executable: true }, result);
   writeFile(
     cwd,
     ".cnb/agent/Dockerfile",

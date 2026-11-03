@@ -347,7 +347,7 @@ async function dispatchTask(cwd: string, trusted: boolean, options: DispatchOpti
     `构建 ${url}`,
     testCommand ? `测试 ${testCommand}` : "测试 未配置（agent 只改代码，不跑测试）",
     "",
-    "已进入后台托管，可以合盖离开。完成后会推送分支/PR，并通过 CNB 侧的 IM webhook 通知。",
+    "已进入后台托管，可以合盖离开。完成后会推送分支/PR，回来用 /cloud-status 查看。",
   ].join("\n");
 
   return { run, text };
@@ -685,7 +685,7 @@ export default function cnbCloudExtension(pi: ExtensionAPI): void {
         "",
         "下一步：",
         "  1. 提交 .cnb.yml 与 .cnb/agent/ 到默认分支",
-        `  2. 在 CNB 密钥仓库里配置 AGENT_API_KEY / AGENT_BASE_URL / AGENT_MODEL（以及可选的 AGENT_NOTIFY_WEBHOOK），并在 .cnb.yml 里 imports 它`,
+        `  2. 在 CNB 密钥仓库里配置 AGENT_API_KEY / AGENT_BASE_URL / AGENT_MODEL，并在 .cnb.yml 里 imports 它`,
         `  3. 编辑 ${projectConfigPath(ctx.cwd)} 里的 model/baseUrl/testCommand`,
         "  4. 运行 /cloud <任务> 派发",
       ].filter(Boolean);

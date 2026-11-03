@@ -8,11 +8,10 @@
 #       AGENT_TEST_CMD        test command; falls back to .pi/cnb-cloud.json
 #       AGENT_MAX_ITERATIONS  agent passes; default 2
 #       AGENT_MODEL / AGENT_PROVIDER / AGENT_BASE_URL / AGENT_API_KEY
-#       AGENT_NOTIFY_WEBHOOK  IM webhook URL (WeCom / Feishu / DingTalk / Slack)
 #   out ===PI-CNB-RESULT=== followed by one JSON line, plus a pushed branch/PR.
 #
-# Deliberately avoids `set -e`: a failed agent must still push, notify and
-# print a result marker so the local side and the IM message stay truthful.
+# Deliberately avoids `set -e`: a failed agent must still push and print a
+# result marker so the local side stays truthful.
 
 set -uo pipefail
 
@@ -60,7 +59,6 @@ MODEL="${AGENT_MODEL:-$(cfg model)}"
 PROVIDER="${AGENT_PROVIDER:-$(cfg provider)}"
 BASE_URL="${AGENT_BASE_URL:-$(cfg baseUrl)}"
 API_KIND="${AGENT_API:-$(cfg api)}"
-NOTIFY_WEBHOOK="${AGENT_NOTIFY_WEBHOOK:-}"
 
 # ------------------------------------------------------------- lifecycle -----
 COMMIT_SHA=""
@@ -96,24 +94,6 @@ finish() { # finish <status> <message>
       repo: process.env.CNB_REPO_SLUG || "",
     }) + "\n");
   '
-
-  if [ -n "$NOTIFY_WEBHOOK" ] && [ -x ".cnb/agent/notify.sh" ]; then
-    local emoji="✅"
-    [ "$FINAL_STATUS" = "error" ] && emoji="❌"
-    [ "$FINAL_STATUS" = "cancel" ] && emoji="⚪"
-    local text
-    text="$(printf '%s **pi 云端 Agent %s**\n\n> %s\n\n- 仓库: %s\n- 分支: %s%s\n- 测试: %s%s\n- 构建: %s\n%s' \
-      "$emoji" "$([ "$FINAL_STATUS" = "success" ] && echo 完成 || echo 结束)" \
-      "$(printf '%s' "$TITLE" | head -n1)" \
-      "${CNB_REPO_SLUG:-}" \
-      "$WORK_BRANCH" \
-      "$([ -n "$PR_URL" ] && printf ' (PR: %s)' "$PR_URL" || printf '')" \
-      "$TEST_STATUS" \
-      "$([ "$PUSHED" = "1" ] && printf '' || printf ' · 无代码变更')" \
-      "${CNB_BUILD_WEB_URL:-}" \
-      "$(printf '%s' "$SUMMARY" | head -c 800)")"
-    bash .cnb/agent/notify.sh "$text" >/dev/null 2>&1 || log "⚠ 通知发送失败（不影响结果）"
-  fi
 }
 
 trap 'finish "error" "流水线被中断"' INT TERM

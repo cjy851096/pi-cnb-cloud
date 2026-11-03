@@ -27,8 +27,6 @@ export interface CnbCloudConfig {
   pollIntervalMs: number;
   /** Resume watching unfinished runs when a session starts. */
   autoWatch: boolean;
-  /** Env var that holds an IM webhook URL (WeCom / Feishu / DingTalk / Slack / generic). */
-  notifyWebhookEnv?: string;
   /** Prefix for generated build titles. */
   titlePrefix?: string;
   /** Agent image used by the generated .cnb.yml (plain image mode). */
