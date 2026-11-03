@@ -27,20 +27,35 @@
 
 ## 安装
 
-扩展是纯 TypeScript，无需编译（pi 用 jiti 直接加载）。
+```bash
+pi install git:github.com/cjy851096/pi-cnb-cloud
+```
+
+装好后重启 pi（或 `/reload`），`/cloud`、`/cloud-new` 即可用。
 
 ```bash
-git clone <this-repo> ~/code/pi-cnb-cloud
+pi list                                            # 确认已安装
+pi update --extensions                             # 更新到最新 main
+pi remove git:github.com/cjy851096/pi-cnb-cloud    # 卸载
+```
+
+> 想锁定版本：`pi install git:github.com/cjy851096/pi-cnb-cloud@<tag|commit>`。
+> 项目内安装（写 `.pi/settings.json`）：加 `-l`。
+
+**开发模式**（改代码即时生效，不经过安装）：
+
+```bash
+git clone git@github.com:cjy851096/pi-cnb-cloud.git ~/code/pi-cnb-cloud
 ln -s ~/code/pi-cnb-cloud ~/.pi/agent/extensions/pi-cnb-cloud
 ```
 
-或写进 `~/.pi/agent/settings.json`：
+两种方式不要同时用，否则扩展会加载两次（命令变成 `/cloud:1`、`/cloud:2`）。
 
-```json
-{ "extensions": ["/path/to/pi-cnb-cloud"] }
+验证：
+
+```bash
+pi --no-session --list-models > /dev/null && echo ok
 ```
-
-验证：`pi --no-session --list-models > /dev/null && echo ok`
 
 ## 准备
 

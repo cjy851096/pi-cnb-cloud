@@ -1,8 +1,13 @@
 {
   "name": "pi-cnb-cloud",
   "version": "0.1.0",
-  "description": "Fire-and-forget coding agent for Tencent CNB (cnb.cool / cnb.build) — dispatch a pi task to a CNB pipeline, close your laptop, get a branch + PR + IM notification back.",
-  "private": true,
+  "description": "Fire-and-forget coding agent for Tencent CNB: dispatch a pi task to a CNB pipeline, close your laptop, get a branch + PR back.",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "cnb",
+    "coding-agent"
+  ],
   "type": "module",
   "pi": {
     "extensions": [
@@ -10,10 +15,17 @@
     ]
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-transform-types test/logic.test.ts && node --experimental-transform-types test/api.test.ts && bash test/run-sh.test.sh && node --experimental-transform-types test/rpc-smoke.test.ts"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
   },
   "devDependencies": {
-    "@types/node": "^22.20.5",
-    "typescript": "5.7"
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
   }
 }
